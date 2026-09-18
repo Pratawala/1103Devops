@@ -1,40 +1,70 @@
-#first commit kinda nervous!
 
-def add_inventory():
-    inventory = 0
-    input_value = "0" 
-    ""
-    Fe = 0 #failed entry 
-    while str(input_value) != "quit":
+
+# first commit kinda nervous!
+
+def get_valid_input(inventory):
+    while True:
+        input_value = input(
+            "Current inventory: " + str(inventory) +
+            "\nHow much inventory do you want?: "
+        )
+
+        if input_value == "quit":
+            return "quit"
+
         try:
-            input_value = input(  "Current inventory: " + str(inventory) + "\n" + "how much inventory do you want?:")
+            input_value = int(input_value)
 
-            if  str(input_value) == "quit":
-                        print("total unit processed:", inventory)
-                        print("failed entries:", Fe)
-                        break 
-
-            else:
-                input_value = int(input_value)
-
-            
-            if input_value + inventory >= 500:
-                print("------!!!!Inventory cannot exceed 500, OVERSTOCK ALERT!!!------")
-                break
-                
-            elif input_value < 0:
+            if input_value < 0:
                 print("------Inventory cannot be negative------")
-                Fe += 1
+                return False
 
-            else:
-                inventory += input_value
+            return input_value
 
-
-        except(ValueError, TypeError): 
-                print("------Invalid input, please enter a digit greater than 0 or type 'quit' to exit------")
-                Fe += 1
+        except (ValueError, TypeError):
+            print("------Invalid input, please enter a digit greater than 0 or type 'quit' to exit------")
 
 
+def process_delivery(current_total, new_value):
+    new_total = current_total + new_value
+
+    if new_total >= 500:
+        print("------!!!!Inventory cannot exceed 500, OVERSTOCK ALERT!!!------")
+        return current_total
+
+    return new_total
 
 
-add_inventory()
+def calculate_tax(amount):
+    return amount * 0.10
+
+
+def generate_report(total_units, failed_attempts):
+    print("------Inventory Report------")
+    print("Total unit processed:", total_units)
+    print("Failed entries:", failed_attempts)
+
+
+inventory = 0
+failed_attempts = 0
+total_tax = 0
+
+while True:
+    input_value = get_valid_input(inventory)
+
+    if input_value == "quit":
+        generate_report(inventory, failed_attempts)
+        break
+
+    if input_value is False:
+        failed_attempts += 1
+        continue
+
+    new_inventory = process_delivery(inventory, input_value)
+
+    if new_inventory == inventory:
+        failed_attempts += 1
+        continue
+
+    inventory = new_inventory
+    total_tax += calculate_tax(input_value)
