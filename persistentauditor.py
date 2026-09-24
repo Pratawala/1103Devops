@@ -3,6 +3,7 @@ import json
 # first commit kinda nervous!
 
 def get_valid_id():
+    failed_attempts_id = 0
     while True:
         id_value = input("What is your product ID ?")
 
@@ -12,75 +13,86 @@ def get_valid_id():
         try:
             id_value = int(id_value)
 
-            if id_value <= 1000:
+            if id_value < 1000:
                 print("------Id starts from 1000!------")
-                return False
+                failed_attempts_id +=1
 
-            for product in inventory: #product is the inner list of the list inventory 
-                if id_value == product[0]: #search the id of each inner list against the list of product
-                    return product 
+            else:
+                for product in inventory: #product is the inner list of the list inventory 
+                    if id_value == product[0]: #search the id of each inner list against the list of product
+                        return product, failed_attempts_id
+                        
 
-                else:
-                    pass
-            new_product = [id_value,"nil",0]
-            return new_product
+                    else:
+                        new_product = [id_value,"---Pending Description---",0]
+                        return new_product , failed_attempts_id
                      
         except (ValueError, TypeError):
             print("------Invalid input, please enter an id greater than 1000 or type 'quit' to exit------")
-            return False
+            failed_attempts_id += 1
 
 
 
-def get_valid_description(inventory):
+def get_valid_description(description_value):
     while True:
-        description_value = input("What item are you processing")
+        description_value = input("What item are you processing: ")
 
         if description_value == "quit": #make sure to call reportfunction 
-            return "quit"
+            print("Cannot quit whilst inputting inventory!")
 
         try: #nothing to check, string input 
             str(description_value) #just in case 
             return description_value
 
         except (ValueError, TypeError):
-            print("------Invalid input, please enter a digit greater than 0 or type 'quit' to exit------")
-            return False
+            print("------Please enter a string------")
 
-def get_valid_quantity(inventory):
+def get_valid_quantity(quantity_value):
+    failed_attempts=0 #place it outside the loop, this variable will be returned once function finish
     while True:
-        quantity_value = input(
-            "Current inventory: " + str((inventory[2])) +
-            "\nHow much inventory do you want?: "
-        )
+        quantity_value = input("How much quantity do you want to input?")
 
         if quantity_value == "quit":
             print("-----Cannot quit after entering product description!------")
-
         try:
             quantity_value = int(quantity_value)
 
             if quantity_value <= 0:
                 print("------Inventory cannot be less than zero------")
-                return False
+                failed_attempts+=1
 
-            elif quantity_value + inventory > 500:
+            elif quantity_value + current_product[2] > 500:
                 print("------!!!!Inventory cannot exceed 500, OVERSTOCK ALERT!!!------")
-                return False
+                failed_attempts +=1
 
-            return quantity_value
+            else:
+                return quantity_value,failed_attempts
+
 
         except (ValueError, TypeError):
             print("------Invalid input, please enter a digit greater than 0 or type 'quit' to exit------")
-            return False
+            failed_attempts += 1
 
 
-def process_delivery(product_id,valid_description,current_total, new_value): #collect all 3 values of list, quantity tally done here
-    new_total = current_total + new_value
-    with open("inventory.json", "w") as f:
-        f.write(str([product_id,valid_description,new_total]))
+def process_delivery(current_id,product_description,quantity_value): #collect all 3 values of list, quantity tally done here
+    for product in inventory: #current product[id,productName,Quantitytoadd]
+        if product[0] == current_id: #grabbing the any product that matches
+            product[1] = str(product_description) #updating product name (if any)
+            product[2] = int(current_product[2]) + int(quantity_value) #adds current amount with new amount
+            with open("inventory.json", "w") as f:
+                    json.dump(inventory, f, )
+            return #exits loop so we dont clone list by accident 
+
+        else:
+            current_product[1]= str(product_description)
+            current_product[2]= int(quantity_value)
+            inventory.append(current_product) #add list if no match
+            with open("inventory.json", "w") as f:
+                json.dump(inventory, f, )
+            return
 
 
-    return new_total
+    
 
 
 def calculate_tax(quantity_value):
@@ -88,10 +100,10 @@ def calculate_tax(quantity_value):
     return taxable_amount 
 
 
-def generate_report(total_units, failed_attempts):
+def generate_report(total_units, failed_attempts,failed_attempts_id):
     print("------Inventory Report------")
     print("Total unit processed:", total_units)
-    print("Failed entries:", failed_attempts)
+    print("Failed entries:", failed_attempts + failed_attempts_id)
 
 #ask if can use Json 
 def persistence(): 
@@ -112,41 +124,42 @@ def persistence():
 
 
 
-inventory = persistence()
+inventory = persistence() #pulls out the whole Json inventory file to compare
 failed_attempts = 0
 total_tax = 0
-quanity_value = 0
 
 while True:
-    if quantity_value!= 0:
-        print("taxable amount:$", calculate_tax(quantity_value))
+    current_product = []
+    product_description = " "
+    quantity_value = 0
+    # if quantity_value!= 0:
+    #     print("taxable amount:$", calculate_tax(quantity_value))
 
-    product_description = get_valid_description (inventory[1])
-    quantity_value = get_valid_quantity(inventory[2])
+    current_product = get_valid_id()[0] #ignores the failed attempt variable
+    current_id = current_product[0]
+    product_description = get_valid_description (current_product[1])
+    quantity_value = get_valid_quantity(current_product[2])[0] #ignoring failed variable again
+    process_delivery(current_id,product_description,quantity_value) #not editing ID, only send these two
 
 
-    if get_valid_id() == "quit": #user can only quit while editing ID
+    if get_valid_id == "quit": #user can only quit while editing ID
         generate_report(inventory, failed_attempts)
         break 
 
-    if quantity_value is False:
-        failed_attempts += 1
-        continue
+  
 
-    new_inventory = process_delivery(inventory, quantity_value) #adds current input with previous input, returning sum as (new total)
-
-
-    inventory = new_inventory #slots the return value "new total" of "new inventory" into the variable inventory
-    total_tax += calculate_tax(quantity_value) #assigning return value called amount from calculate tax funcion into total tax
-
+    # ----------------------------------------------------------------
     # done
     # persistent() is done (load inventory function is this )
     # id funciton is done
+    #added the two other function
+    #converted the rest of quantity funciton to grep 
 
+    # ----------------------------------------------------------------
     #to do
-    # add the 2 other function to update descripton and quantiy
+    #existing list value should be overwritten, not create a new one!
+    #fix whatever is making my code print instead of amend
     # create a function similar to process_inventory, but records each list as seperate, regarless of ID
-    #convert the rest of quantity function to grep from innerlist value
     #integration 
 
     
