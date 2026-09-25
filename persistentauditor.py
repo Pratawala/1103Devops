@@ -106,7 +106,7 @@ def process_delivery(current_id,product_description,quantity_value): #collect al
 def calculate_tax(quantity_value):
     taxable_amount = quantity_value *0.10
     return taxable_amount 
-
+#staged
 
 def generate_report(failed_id,failed_quantity,total_units,total_good_attempts):
     print("------Inventory Report------")
