@@ -24,7 +24,7 @@ def get_valid_id():
                         
 
                     else:
-                        new_product = [id_value,"---Pending Description---",0]
+                        new_product = id_value
                         return new_product , failed_attempts_id
                      
         except (ValueError, TypeError):
@@ -47,6 +47,21 @@ def get_valid_description(description_value):
             print("------Please enter a string------")
 
 
+def get_valid_price(price_value):
+    while True:
+        price_value = input("How much are you selling for?")
+
+        if price_value == "quit":
+            print("Cannot quit whilst inputting inventory!")
+
+        try:
+            float(price_value)
+            return price_value
+
+        except(ValueError,TypeError):
+            print("-----Please enter an valid price!------")
+
+
 def get_valid_quantity(quantity_value):
     failed_attempts=0 #place it outside the loop, this variable will be returned once function finish
     while True:
@@ -61,9 +76,9 @@ def get_valid_quantity(quantity_value):
                 print("------Inventory cannot be less than zero------")
                 failed_attempts+=1
 
-            elif quantity_value + current_product[2] > 500:
-                print("------!!!!Inventory cannot exceed 500, OVERSTOCK ALERT!!!------")
-                failed_attempts +=1
+            # elif quantity_value + current_product[2] > 500:
+            #     print("------!!!!Inventory cannot exceed 500, OVERSTOCK ALERT!!!------")
+            #     failed_attempts +=1
 
             else:
                 return quantity_value,failed_attempts
@@ -74,41 +89,48 @@ def get_valid_quantity(quantity_value):
             failed_attempts += 1
 
 
-def process_delivery(current_id,product_description,quantity_value): #collect all 3 values of list, quantity tally done here
+def process_delivery(current_id,product_description,price_value,quantity_value): #collect all 3 values of list, quantity tally done here
     good_attempts = 0
     for product in inventory: #current product[id,productName,Quantitytoadd]
         if product[0] == current_id: #grabbing the any product that matches
             product[1] = str(product_description) #updating product name (if any)
-            product[2] = int(current_product[2]) + int(quantity_value) #adds current amount with new amount
+            product[2] = float(price_value)
+            product[3] = int(current_product[3]) + int(quantity_value) #adds current amount with new amount
             with open("inventory.json", "w") as f:
                     json.dump(inventory, f, )
             print(current_product)
             print("\norders successfully saved to orders.txt")
-            good_attempts+=1
-            return good_attempts#exits loop so we dont clone list by accident 
+            # good_attempts+=1
+            # return good_attempts#exits loop so we dont clone list by accident 
 
-    else:
-            current_product[1]= str(product_description)
-            current_product[2]= int(quantity_value)
-            inventory.append(current_product) #add list if no match
+        else: #is this not just creating new list and assigning vlaues?
+            current_product = [
+            current_id,
+            str(product_description),
+            float(price_value),
+            int(quantity_value)
+        ]
+            inventory.append(current_product) # add list 
             with open("inventory.json", "w") as f:
                 json.dump(inventory, f, )
             print(current_product)
-            print("\norder successfully saved to orders.txt")
-            good_attempts+=1
-            return good_attempts
+            print("\nProduct added successfully!")
+            # good_attempts+=1
+            # return good_attempts
 
-
-def calculate_tax(quantity_value):
-    taxable_amount = quantity_value *0.10
-    return taxable_amount 
-#staged
-
-def generate_report(failed_id,failed_quantity,total_units,total_good_attempts):
-    print("------Inventory Report------")
-    print("Total transaction processed:", total_good_attempts)
-    print("Total unit processed:", total_units)
-    print("Failed entries:", int(failed_id) + int(failed_quantity))
+def update_stock(product_id):
+    for product in inventory:
+        if product_id == product[0]:
+            print()
+            print("Product found | Name:",product[1],"| Current Stock:",product[3])
+            product[3] = input("Input new stock Quantity: ")
+            print()
+            print("Stock update successfully!")
+            return
+        
+    # this will only be reached when if statement not touched    
+    print("Stock not found!")
+            
 
 #pull json file
 def persistence(): 
@@ -119,28 +141,44 @@ def persistence():
         return inventory 
 
     except (FileNotFoundError):
-        inventory = [[1000, "nil", 0]] #create a variable called inventory
-
+        inventory = [[1000, "nil",0.0, 0]] #create a variable called inventory
+        print("inventory.json created\n Inventory loaded successfully")
         f = open("inventory.json", "w") #create inventory.json file , -w is important
         json.dump(inventory, f) #convert the python value of Inventory into Json 
         f.close()
 
         return inventory
+
+
+def search_product():
+    product_query = int(input("Enter product ID you are searching for?: "))
+    for product in inventory: #iterates through inventory
+        if product_query == product[0]: # compare id with ids of product in inventory
+             print("-------------------------\n",
+             "Product Found!\n" \
+             "ID:", product[0],
+            "| Name:", product[1],
+            "| Price:$", product[2],
+            "| stock", product[3])
+
+        else:
+            print("Product not found!")
+
         
 def load_inventory(inventory):
     print("\n------ Current Inventory ------")
 
     for product in sorted(inventory, key=lambda product: product[0]):
         print("ID:", product[0],
-              "| Description:", product[1],
-              "| Quantity:", product[2])
+              "| Name:", product[1],
+              "| Price:$", product[2],
+              "| stock", product[3])
 
 
 def welcome_screen():
 
     while True:
-        print("----------- MENU -----------\n1. Display All Products\n2. Add Product\n3. Update Stock\n4."
-            "Search Product\n5. Save Inventory\n6. Exit\n----------------------------")
+        
 
         
         welcome_screen_input=input("\nSelect option:")
@@ -157,7 +195,19 @@ def welcome_screen():
             print("Select an option within menu!")
 
 
-inventory = persistence() #loads inventory from json file, create file if not there
+def save_inventory():
+    print("Saving Inventory...," \
+    "Inventory saved successfully to inventory.json")
+
+
+
+def exit_message():
+    print("\n Saving inventory before exit..." \
+    "Inventory saved successfully."\
+        \
+    "Thank you for using Inventory Management System."\
+    "Program terminated")
+
 
 #init values 
 failed_attempts = 0
@@ -166,60 +216,54 @@ total_good_attempts = 0
 failed_id = 0
 failed_quantity = 0
 total_units = 0
+inventory = persistence() #loads inventory from json file, create file if not there
+
+print("\n----------- MENU -----------\n1. Display All Products\n2. Add Product\n3. Update Stock\n4."
+            "Search Product\n5. Save Inventory\n6. Exit\n----------------------------")
 
 while True:
+    #reset variabele (so you dont carry value of each iteration over)
     current_product = []
     product_description = " "
     quantity_value = 0
-    # if quantity_value!= 0:
-    #     print("taxable amount:$", calculate_tax(quantity_value))
+    price_value = 0.0
 
-    welcome_screen()
     
+    option = welcome_screen()
 
-
-#     1. Display All Products
-# 2. Add Product
-# 3. Update Stock
-# 4. Search Product
-# 5. Save Inventory
-# 6. Exit
-
-    if welcome_screen == 1:
+    if option == 1:
         load_inventory(inventory)
+        continue
 
-    if welcome_screen == 2:
-        get_valid_id()
+    if option == 2:
+        print("add new product")
+        current_id = get_valid_id()[0]#specify first value as function returns >1 value
+        product_description = get_valid_description(product_description)
+        price_value = get_valid_price(price_value)
+        quantity_value = get_valid_quantity(quantity_value)[0]#specify first value as function returns >1 value
+        process_delivery(current_id,product_description,price_value,quantity_value) 
+        continue
 
-    if welcome_screen == 3:
+    if option == 3:
+        print("update stock")
+        current_id = get_valid_id()[0]#specify first value as function returns >1 value
+        update_stock(current_id)
+        continue
 
-    if welcome_screen == 4:
+    if option == 4:
+        search_product()
+        continue
 
-    if welcome_screen == 5:
+    if option == 5:
+        save_inventory()
+        continue
 
-    if welcome_screen ==6: 
+    if option ==6: 
+        exit_message()
+        break
 
 
 
-    return_get_valid_id = get_valid_id() #saved output of function to a list (no need call function eveyrthing you need variable)
-    if return_get_valid_id[0] == "quit": #user can only quit while editing ID
-            # failed_id = return_get_valid_id[1] #add failed attempt from failed_id 
-            # failed_quantity = return_quantity_value[1]
-            generate_report(failed_id,failed_quantity,total_units,total_good_attempts)
-            break 
-
-    else: #initate inventory process 
-        current_product = return_get_valid_id[0]
-        current_id = current_product[0]
-        product_description = get_valid_description (current_product[1])
-        return_quantity_value = get_valid_quantity(current_product[2]) #assigning function return to variable 
-        quantity_value = return_quantity_value[0] #ignoring failed variable again
-       
-        total_units += quantity_value # adding this for report
-        delivery_information = process_delivery(current_id,product_description,quantity_value) #not editing ID, only send these twol_good_attempts += delivery_information #saving delivery information to a variable (in case we need to scale)
-        total_good_attempts += int(delivery_information) #currently an integer as only one variable, no neeed to [x]
-
-    
 
   
 
