@@ -131,7 +131,7 @@ def update_stock(product_id):
     # this will only be reached when if statement not touched    
     print("Stock not found!")
             
-
+#load inventory verified!
 #pull json file
 def persistence(): 
     try:
