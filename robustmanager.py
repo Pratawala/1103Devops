@@ -133,6 +133,7 @@ def update_stock(product_id):
             
 #load inventory verified!
 #pull json file
+#final save verified!
 def persistence(): 
     try:
         f = open("inventory.json", "r") #variable f will be assigned the file opened with flag -r
